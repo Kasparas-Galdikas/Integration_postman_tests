@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "positive - user - getUsers",
+    "_postman_id": "pos-user-list",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pozityvus testas: GET /users grąžina masyvą be password laukų."
+  },
+  "item": [
+    {
+      "name": "Gauti visus vartotojus – sėkmė (GET /users)",
+      "event": [
+        {
+          "listen": "prerequest", 
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = Date.now();",
+              "pm.collectionVariables.set('u1', `user_pos_list1_${id}`);",
+              "pm.collectionVariables.set('u2', `user_pos_list2_${id}`);",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+              "const make = (u)=> pm.sendRequest({",
+              "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+              "  body:{mode:'raw', raw: JSON.stringify({ username:u, fullName:'Full '+u, email:`${u}@ex.com`, password:'secret1' })}",
+              "});",
+              "make(pm.collectionVariables.get('u1'));",
+              "make(pm.collectionVariables.get('u2'));",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
+              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "pm.test('Content-Type yra JSON', () => {",
+              "  const ctype = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "});",
+              "const arr = pm.response.json();",
+              "pm.test('Atsakymas yra masyvas', ()=> pm.expect(arr).to.be.an('array'));",
+              "pm.test('Kiekvienas neturi password ir turi reikalingus laukus', ()=> arr.forEach(u=>{",
+              "  pm.expect(u).to.have.property('username');",
+              "  pm.expect(u).to.have.property('email');",
+              "  pm.expect(u).to.have.property('fullName');",
+              "  pm.expect(u).to.not.have.property('password');",
+              "}));",
+              "pm.test('Masyve yra naujai sukurti vartotojai', ()=> {",
+              "  const usernames = arr.map(u=>u.username);",
+              "  pm.expect(usernames).to.include(pm.collectionVariables.get('u1'));",
+              "  pm.expect(usernames).to.include(pm.collectionVariables.get('u2'));",
+              "});",
+              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.eql('/users'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

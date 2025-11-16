@@ -1,0 +1,48 @@
+{
+  "info": { "name": "negative - login - invalid", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [{
+    "name": "Login – neteisingas slaptažodis (401)",
+    "event": [
+      {
+        "listen": "prerequest",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "const id = Date.now();",
+            "pm.collectionVariables.set('neg_login_user', `neg_login_${id}`);",
+            "pm.collectionVariables.set('neg_login_pass', 'secret1');",
+            "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+            "pm.sendRequest({",
+            "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+            "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_login_user'), fullName:'Neg Login', email:`neglogin_${id}@ex.com`, password: pm.collectionVariables.get('neg_login_pass') })}",
+            "});",
+            "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+          ]
+        }
+      },
+      {
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));",
+            "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+            "const j = pm.response.json();",
+            "pm.test('Yra error', () => pm.expect(j).to.have.property('error'));",
+            "pm.test('Error tekstas tikslus', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+            "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+            "pm.test('Teisingas endpoint', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+          ]
+        }
+      }
+    ],
+    "request": {
+      "method": "POST",
+      "header": [{ "key": "Content-Type", "value": "application/json" }],
+      "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
+      "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{neg_login_user}}\",\n  \"password\": \"WRONGPASS\"\n}" }
+    },
+    "response": []
+  }],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+}

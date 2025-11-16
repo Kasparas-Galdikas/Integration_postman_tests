@@ -1,0 +1,27 @@
+{
+  "info": { "name": "negative - register - wrongContentType", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [{
+    "name": "Registracija – neteisingas Content-Type (tikimės 400)",
+    "event": [{
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Status 400', () => pm.response.to.have.status(400));",
+          "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+          "const j = pm.response.json();",
+          "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+          "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+        ]
+      }
+    }], 
+    "request": {
+      "method": "POST",
+      "header": [{ "key": "Content-Type", "value": "text/plain" }],
+      "url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] },
+      "body": { "mode": "raw", "raw": "username=user_ct_text&fullName=Bad CT&email=ct@example.com&password=secret1" }
+    },
+    "response": []
+  }],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+}

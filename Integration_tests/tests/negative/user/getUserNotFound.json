@@ -1,0 +1,23 @@
+{
+  "info": { "name": "negative - user - getUserNotFound", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [{
+    "name": "GET /user/:username – 404",
+    "event": [{
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Status 404', () => pm.response.to.have.status(404));",
+          "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+          "const j = pm.response.json();",
+          "pm.test('Error tekstas teisingas', () => pm.expect(j.error).to.equal('User not found'));",
+          "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+          "pm.test('Endpoint prasideda /user/', () => pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//));"
+        ]
+      }
+    }],
+    "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/user/not_existing_user", "host": ["{{baseUrl}}"], "path": ["user","not_existing_user"] } },
+    "response": []
+  }],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+}

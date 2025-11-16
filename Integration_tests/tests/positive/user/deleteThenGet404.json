@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "positive - user - deleteThenGet404",
+    "_postman_id": "pos-user-delete-then-404",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pozityvus testas: po sėkmingo DELETE vėlesnis GET /user/:username grąžina 404."
+  },
+  "item": [
+    {
+      "name": "Ištrinti ir patikrinti 404 (DELETE → GET 404)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = Date.now();",
+              "pm.collectionVariables.set('dg_username', `user_pos_del_get_${id}`);",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+              "pm.sendRequest({",
+              "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+              "  body:{mode:'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('dg_username'),",
+              "    fullName: 'User Del Get',",
+              "    email: `delget_${id}@example.com`,",
+              "    password: 'secret1'",
+              "  })}",
+              "});",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// 1 Tikriname DELETE atsakymą",
+              "pm.test('DELETE status 200 ir JSON', () => {",
+              "  pm.response.to.have.status(200);",
+              "  const ctype = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ctype, 'Content-Type antraštė egzistuoja').to.be.a('string');",
+              "  pm.expect(ctype).to.match(/^application\\/json\\b/i); // leidžia ; charset=utf-8",
+              "});",
+              "",
+              "// 2 Paruošiame duomenis naujam GET tikrinimui",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+              "const u = pm.collectionVariables.get('dg_username');",
+              "",
+              "// 3 Vykdome GET po ištrynimo – tikimės 404",
+              "pm.sendRequest({ url: `${base}/user/${u}`, method: 'GET' }, (err, res) => {",
+              "  pm.test('GET po delete → 404', () => pm.expect(res.code).to.equal(404));",
+              "",
+              "  // Tikriname JSON formatą",
+              "  pm.test('GET po delete → JSON', () => {",
+              "    const ctype = res.headers.get('Content-Type');",
+              "    pm.expect(ctype, 'Content-Type antraštė egzistuoja').to.be.a('string');",
+              "    pm.expect(ctype).to.match(/^application\\/json\\b/i); // leidžia ; charset=utf-8",
+              "  });",
+              "",
+              "  // Tikriname error lauką ir tekstą",
+              "  const j = res.json();",
+              "  pm.test(\"GET po delete → error 'User not found'\", () => pm.expect(j.error).to.equal('User not found'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/delete-user/{{dg_username}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "delete-user",
+            "{{dg_username}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

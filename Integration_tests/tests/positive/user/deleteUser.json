@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "positive - user - deleteUser",
+    "_postman_id": "pos-user-delete",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pozityvus testas: DELETE /delete-user/:username grąžina sėkmės žinutę."
+  },
+  "item": [
+    {
+      "name": "Ištrinti vartotoją – sėkmė (DELETE /delete-user/:username)",
+      "event": [
+        { 
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = Date.now();",
+              "pm.collectionVariables.set('du_username', `user_pos_del_${id}`);",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+              "pm.sendRequest({",
+              "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+              "  body:{mode:'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('du_username'),",
+              "    fullName: 'User Positive Delete',",
+              "    email: `posdel_${id}@example.com`,",
+              "    password: 'secret1'",
+              "  })}",
+              "});",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
+              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "pm.test('Content-Type yra JSON', () => {",
+              "  const ctype = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "});",
+              "const j = pm.response.json();",
+              "pm.test('Yra message su username', ()=> {",
+              "  pm.expect(j).to.have.property('message');",
+              "  pm.expect(j.message).to.match(new RegExp(pm.collectionVariables.get('du_username')));",
+              "});",
+              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.match(/\\/delete-user\\//));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/delete-user/{{du_username}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "delete-user",
+            "{{du_username}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

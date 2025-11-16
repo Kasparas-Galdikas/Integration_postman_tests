@@ -1,0 +1,29 @@
+{
+  "info": { "name": "negative - register - invalidEmail", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [{
+    "name": "Registracija – blogas el. paštas (400, validatorius)",
+    "event": [{
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Status 400', () => pm.response.to.have.status(400));",
+          "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+          "const j = pm.response.json();",
+          "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+          "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+          "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+          "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+        ]
+      }
+    }], 
+    "request": {
+      "method": "POST",
+      "header": [{ "key": "Content-Type", "value": "application/json" }],
+      "url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] },
+      "body": { "mode": "raw", "raw": "{\n  \"username\": \"user_neg_badmail\",\n  \"fullName\": \"User Neg BadMail\",\n  \"email\": \"not-an-email\",\n  \"password\": \"secret1\"\n}" }
+    },
+    "response": []
+  }],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+}

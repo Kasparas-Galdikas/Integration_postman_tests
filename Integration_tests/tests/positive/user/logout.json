@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "positive - user - logout",
+    "_postman_id": "pos-user-logout",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pozityvus testas: POST /logout grąžina sėkmės žinutę."
+  },
+  "item": [
+    {
+      "name": "Atsijungti – sėkmė (POST /logout)",
+      "event": [
+        {
+          "listen": "test",
+          "script": { 
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
+              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "pm.test('Content-Type yra JSON', () => {",
+              "  const ctype = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "});",
+              "const j = pm.response.json();",
+              "pm.test('Yra message', ()=> pm.expect(j).to.have.property('message'));",
+              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.eql('/logout'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{baseUrl}}/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "logout"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

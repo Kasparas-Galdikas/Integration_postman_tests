@@ -1,0 +1,47 @@
+{
+  "info": { "name": "negative - register - duplicate", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [{
+    "name": "Registracija – dublikatas (400)",
+    "event": [
+      {
+        "listen": "prerequest",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "const id = Date.now();",
+            "pm.collectionVariables.set('neg_dup_user', `neg_dup_${id}`);",
+            "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+            "pm.sendRequest({",
+            "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+            "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_dup_user'), fullName:'Neg Dup', email:`negdup1_${id}@ex.com`, password:'secret1' })}",
+            "});",
+            "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+          ]
+        }
+      },
+      {
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+            "const j = pm.response.json();",
+            "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+            "pm.test('Error tekstas = Username already exists', () => pm.expect(j.error).to.equal('Username already exists'));",
+            "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+            "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+          ]
+        }
+      }
+    ],
+    "request": {
+      "method": "POST",
+      "header": [{ "key": "Content-Type", "value": "application/json" }],
+      "url": { "raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"] },
+      "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{neg_dup_user}}\",\n  \"fullName\": \"Neg Dup 2\",\n  \"email\": \"negdup2@example.com\",\n  \"password\": \"secret1\"\n}" }
+    },
+    "response": []
+  }],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+}

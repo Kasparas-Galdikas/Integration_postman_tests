@@ -1,0 +1,17 @@
+{
+  "info": {
+    "name": "All Positive Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    { "name": "Register", "item": [ { "$ref": "./register/userRegister.json" } ] },
+    { "name": "Login", "item": [ { "$ref": "./login/userLogin.json" } ] },
+    { "name": "User", "item": [
+        { "$ref": "./user/getUser.json" },
+        { "$ref": "./user/getUsers.json" },
+        { "$ref": "./user/deleteUser.json" },
+        { "$ref": "./user/deleteThenGet404.json" },
+        { "$ref": "./user/logout.json" }
+    ]}
+  ]
+}

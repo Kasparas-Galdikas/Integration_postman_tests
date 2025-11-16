@@ -1,0 +1,34 @@
+{
+  "info": {
+    "name": "All Negative Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "item": [
+        { "$ref": "./login/loginInvalid.json" },
+        { "$ref": "./login/loginMissingField.json" }
+      ]
+    },
+    {
+      "name": "Register",
+      "item": [
+        { "$ref": "./register/registerDuplicate.json" },
+        { "$ref": "./register/registerEmptyBody.json" },
+        { "$ref": "./register/registerInvalidEmail.json" },
+        { "$ref": "./register/registerInvalidUsername.json" },
+        { "$ref": "./register/registerMissingField.json" },
+        { "$ref": "./register/registerShortPassword.json" },
+        { "$ref": "./register/wrongContentType.json" }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        { "$ref": "./user/deleteUserNotFound.json" },
+        { "$ref": "./user/getUserNotFound.json" }
+      ]
+    }
+  ]
+}

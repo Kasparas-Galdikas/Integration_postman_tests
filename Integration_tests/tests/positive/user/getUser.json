@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "positive - user - getUser",
+    "_postman_id": "pos-user-get",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Pozityvus testas: GET /user/:username po sėkmingos registracijos."
+  },
+  "item": [
+    {
+      "name": "Gauti vartotoją – sėkmė (GET /user/:username)",
+      "event": [
+        {
+          "listen": "prerequest", 
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = Date.now();",
+              "pm.collectionVariables.set('u_username', `user_pos_get_${id}`);",
+              "pm.collectionVariables.set('u_fullName', 'User Positive Get');",
+              "pm.collectionVariables.set('u_email', `posget_${id}@example.com`);",
+              "pm.collectionVariables.set('u_password', 'secret1');",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+              "pm.sendRequest({",
+              "  url: `${base}/register`, method: 'POST',",
+              "  header: { 'Content-Type':'application/json' },",
+              "  body: { mode:'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('u_username'),",
+              "    fullName: pm.collectionVariables.get('u_fullName'),",
+              "    email: pm.collectionVariables.get('u_email'),",
+              "    password: pm.collectionVariables.get('u_password')",
+              "  }) }",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
+              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "pm.test('Content-Type yra JSON', () => {",
+              "  const ctype = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "});",
+              "const j = pm.response.json();",
+              "pm.test('Tinkama struktūra ir nėra password', ()=> {",
+              "  pm.expect(j).to.have.property('username');",
+              "  pm.expect(j).to.have.property('email');",
+              "  pm.expect(j).to.have.property('fullName');",
+              "  pm.expect(j).to.not.have.property('password');",
+              "});",
+              "pm.test('Reikšmės sutampa', ()=> {",
+              "  pm.expect(j.username).to.eql(pm.collectionVariables.get('u_username'));",
+              "  pm.expect(j.email).to.eql(pm.collectionVariables.get('u_email'));",
+              "  pm.expect(j.fullName).to.eql(pm.collectionVariables.get('u_fullName'));",
+              "});",
+              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/user/{{u_username}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "user",
+            "{{u_username}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

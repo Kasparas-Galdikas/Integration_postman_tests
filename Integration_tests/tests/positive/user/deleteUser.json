@@ -3,30 +3,56 @@
     "name": "positive - user - deleteUser",
     "_postman_id": "pos-user-delete",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Pozityvus testas: DELETE /delete-user/:username grąžina sėkmės žinutę."
+    "description": "Pozityvus DELETE /delete-user/:username testas su deep validation: state sumažėjimas, 404 po delete, password leak prevencija ir endpoint tikslumas."
   },
   "item": [
     {
       "name": "Ištrinti vartotoją – sėkmė (DELETE /delete-user/:username)",
       "event": [
-        { 
+        {
           "listen": "prerequest",
           "script": {
             "type": "text/javascript",
             "exec": [
+              "// 🔧 Unikalus ID",
               "const id = Date.now();",
+              "",
+              "// 🔧 Laukai",
               "pm.collectionVariables.set('du_username', `user_pos_del_${id}`);",
-              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
-              "pm.sendRequest({",
-              "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
-              "  body:{mode:'raw', raw: JSON.stringify({",
-              "    username: pm.collectionVariables.get('du_username'),",
-              "    fullName: 'User Positive Delete',",
-              "    email: `posdel_${id}@example.com`,",
-              "    password: 'secret1'",
-              "  })}",
+              "pm.collectionVariables.set('du_full_raw', '   <script>Delete</script>   ');",
+              "pm.collectionVariables.set('du_email', `posdel_${id}@example.com`);",
+              "pm.collectionVariables.set('du_password', 'secret1');",
+              "",
+              "// 🔧 Expected escaped (pagal express-validator.escape())",
+              "pm.collectionVariables.set('du_full_expected', '&lt;script&gt;Delete&lt;&#x2F;script&gt;');",
+              "",
+              "// 🔧 Base URL",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+              "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+              "}",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+              "",
+              "// 🔥 Gauti dabartinį vartotojų kiekį",
+              "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+              "  const arr = res.json();",
+              "  pm.collectionVariables.set('countBefore', arr.length);",
               "});",
-              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+              "",
+              "// 🔥 Užregistruojame vartotoją, kurį trinsime",
+              "pm.sendRequest({",
+              "  url: `${base}/register`,",
+              "  method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: {",
+              "    mode: 'raw',",
+              "    raw: JSON.stringify({",
+              "      username: pm.collectionVariables.get('du_username'),",
+              "      fullName: pm.collectionVariables.get('du_full_raw'),",
+              "      email: pm.collectionVariables.get('du_email'),",
+              "      password: pm.collectionVariables.get('du_password')",
+              "    })",
+              "  }",
+              "});"
             ]
           }
         },
@@ -35,34 +61,66 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
-              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "const username = pm.collectionVariables.get('du_username');",
+              "const base = pm.collectionVariables.get('baseUrl');",
+              "",
+              "// 1) Status",
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "",
+              "// 2) JSON header",
               "pm.test('Content-Type yra JSON', () => {",
-              "  const ctype = pm.response.headers.get('Content-Type');",
-              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
               "});",
-              "const j = pm.response.json();",
-              "pm.test('Yra message su username', ()=> {",
-              "  pm.expect(j).to.have.property('message');",
-              "  pm.expect(j.message).to.match(new RegExp(pm.collectionVariables.get('du_username')));",
+              "",
+              "// 3) Password neturi būti niekur",
+              "pm.test('Nėra password jokioje atsakymo dalyje', () => {",
+              "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
               "});",
-              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.match(/\\/delete-user\\//));"
+              "",
+              "const body = pm.response.json();",
+              "",
+              "// 4) Message lauką turi turėti ir jame yra username",
+              "pm.test('Atsakymas turi teisingą message', () => {",
+              "  pm.expect(body).to.have.property('message');",
+              "  pm.expect(body.message).to.match(new RegExp(username));",
+              "});",
+              "",
+              "// 5) Strict endpoint validation",
+              "pm.test('Teisingas endpoint DELETE /delete-user/:username', () => {",
+              "  pm.expect(pm.request.url.getPath()).to.match(/^\\/delete-user\\/[A-Za-z0-9_]+$/);",
+              "});",
+              "",
+              "// 🔥 6) Patikrinti ar vartotojas IŠTIES ištrintas",
+              "pm.sendRequest({ url: `${base}/user/${username}`, method: 'GET' }, (err, res) => {",
+              "  pm.test('Po DELETE – GET /user/:username grąžina 404', () => {",
+              "    pm.expect(res.code).to.eql(404);",
+              "  });",
+              "});",
+              "",
+              "// 🔥 7) Patikrinti masyvo dydžio sumažėjimą",
+              "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+              "  const arr = res.json();",
+              "  const before = Number(pm.collectionVariables.get('countBefore'));",
+              "",
+              "  pm.test('Users masyvas sumažėjo 1 vnt.', () => {",
+              "    pm.expect(arr.length).to.equal(before);",
+              "  });",
+              "",
+              "  pm.test('Ištrintas vartotojas nebėra masyve', () => {",
+              "    const exists = arr.some(u => u.username === username);",
+              "    pm.expect(exists).to.be.false;",
+              "  });",
+              "});"
             ]
           }
         }
       ],
       "request": {
         "method": "DELETE",
-        "header": [],
         "url": {
           "raw": "{{baseUrl}}/delete-user/{{du_username}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "delete-user",
-            "{{du_username}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["delete-user", "{{du_username}}"]
         }
       },
       "response": []

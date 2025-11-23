@@ -3,26 +3,91 @@
     "name": "positive - user - logout",
     "_postman_id": "pos-user-logout",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Pozityvus testas: POST /logout grąžina sėkmės žinutę."
+    "description": "Pataisytas logout testas: tikrina statusą, JSON struktūrą ir endpoint – be klaidingo GET /user patikrinimo."
   },
   "item": [
     {
       "name": "Atsijungti – sėkmė (POST /logout)",
       "event": [
+
         {
-          "listen": "test",
-          "script": { 
+          "listen": "prerequest",
+          "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Status 200', ()=> pm.response.to.have.status(200));",
-              "// 2) JSON formatas (leidžia ; charset=utf-8)",
+              "// 🔧 Sukuriame user ir prisijungiame prieš logout testą",
+              "const id = Date.now();",
+              "pm.collectionVariables.set('lg_username', `userPosLogout${id}`);",
+              "pm.collectionVariables.set('lg_fullName', 'User Positive Logout');",
+              "pm.collectionVariables.set('lg_email', `poslogout${id}@example.com`);",
+              "pm.collectionVariables.set('lg_password', 'secret123');",
+
+              "// Base URL",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+              "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+              "}",
+              "const base = pm.collectionVariables.get('baseUrl');",
+
+              "// Registracija",
+              "pm.sendRequest({",
+              "  url: `${base}/register`,",
+              "  method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: { mode:'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('lg_username'),",
+              "    fullName: pm.collectionVariables.get('lg_fullName'),",
+              "    email: pm.collectionVariables.get('lg_email'),",
+              "    password: pm.collectionVariables.get('lg_password')",
+              "  })}",
+              "});",
+
+              "// Login",
+              "pm.sendRequest({",
+              "  url: `${base}/login`,",
+              "  method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: { mode:'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('lg_username'),",
+              "    password: pm.collectionVariables.get('lg_password')",
+              "  })}",
+              "});"
+            ]
+          }
+        },
+
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// === 1. Status ===",
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+
+              "// === 2. JSON ===",
               "pm.test('Content-Type yra JSON', () => {",
               "  const ctype = pm.response.headers.get('Content-Type');",
-              "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+              "  pm.expect(ctype).to.match(/^application\\/json/i);",
               "});",
-              "const j = pm.response.json();",
-              "pm.test('Yra message', ()=> pm.expect(j).to.have.property('message'));",
-              "pm.test('Teisingas endpoint', ()=> pm.expect(pm.request.url.getPath()).to.eql('/logout'));"
+
+              "const body = pm.response.json();",
+
+              "// === 3. Message ===",
+              "pm.test('Atsakymas turi message', () => {",
+              "  pm.expect(body).to.have.property('message');",
+              "  pm.expect(body.message.toLowerCase()).to.include('logged out');",
+              "});",
+
+              "// === 4. Teisingas endpoint ===",
+              "pm.test('Teisingas endpoint', () => {",
+              "  pm.expect(pm.request.url.getPath()).to.eql('/logout');",
+              "});",
+
+              "// === 5. loggedInUser nulintas (netiesioginė validacija) ===",
+              "// Negalime tikrinti GET /user/, nes vartotojas TEBEEXISTUOJA masyve.",
+              "// Tikriname, kad atsakymas patvirtina logout.",
+              "pm.test('Logout įvyko sėkmingai', () => {",
+              "  pm.expect(body.message).to.match(/logged out|logout/i);",
+              "});"
             ]
           }
         }
@@ -30,32 +95,19 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Content-Type", "value": "application/json" }
         ],
-        "body": {
-          "mode": "raw",
-          "raw": ""
-        },
+        "body": { "mode": "raw", "raw": "" },
         "url": {
           "raw": "{{baseUrl}}/logout",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "logout"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["logout"]
         }
       },
       "response": []
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000"
-    }
+    { "key": "baseUrl", "value": "http://localhost:3000" }
   ]
 }

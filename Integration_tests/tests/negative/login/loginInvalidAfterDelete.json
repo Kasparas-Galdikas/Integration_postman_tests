@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "Login – invalid after user deleted",
+    "description": "Tikriname, kad po vartotojo ištrynimo prisijungimas vėl nepavyktų (401).",
+    "_postman_id": "loginInvalidAfterDelete",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "negative - login - invalidAfterDelete",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// 🔧 Visada nustatome baseUrl",
+              "pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+              "",
+              "// 🔧 Dinaminiai kintamieji",
+              "const id = Date.now();",
+              "pm.collectionVariables.set('delLoginUser', `user_after_delete_${id}`);",
+              "pm.collectionVariables.set('delLoginPass', 'secret1');",
+              "",
+              "const base = pm.collectionVariables.get('baseUrl');",
+              "",
+              "// 1) Sukuriame vartotoją",
+              "pm.sendRequest({",
+              "  url: `${base}/register`,",
+              "  method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: { mode: 'raw', raw: JSON.stringify({",
+              "    username: pm.collectionVariables.get('delLoginUser'),",
+              "    fullName: 'User After Delete',",
+              "    email: `after_delete_${id}@example.com`,",
+              "    password: pm.collectionVariables.get('delLoginPass')",
+              "  }) }",
+              "}, () => {});",
+              "",
+              "// 2) Ištriname vartotoją",
+              "pm.sendRequest({",
+              "  url: `${base}/delete-user/${pm.collectionVariables.get('delLoginUser')}`,",
+              "  method: 'DELETE'",
+              "}, () => {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// 1) LOGIN po delete → turi būti 401",
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "",
+              "// 2) JSON Content-Type",
+              "pm.test('Content-Type JSON', () => {",
+              "  const ct = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ct).to.match(/^application\\/json\\b/i);",
+              "});",
+              "",
+              "const j = pm.response.json();",
+              "",
+              "// 3) Error laukas",
+              "pm.test('Atsakyme yra error', () => pm.expect(j).to.have.property('error'));",
+              "pm.test('Error tekstas = Invalid username or password', () => {",
+              "  pm.expect(j.error).to.equal('Invalid username or password');",
+              "});",
+              "",
+              "// 4) User objekto neturi būti",
+              "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+              "",
+              "// 5) Endpoint",
+              "pm.test('Teisingas endpoint /login', () => {",
+              "  pm.expect(pm.request.url.getPath()).to.eql('/login');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{delLoginUser}}\",\n  \"password\": \"{{delLoginPass}}\"\n}"
+        },
+        "description": "Login turėtų nepavykti, nes vartotojas buvo ištrintas prieš tai."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

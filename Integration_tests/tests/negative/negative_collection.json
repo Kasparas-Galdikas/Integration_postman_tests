@@ -7,27 +7,67 @@
     {
       "name": "Login",
       "item": [
-        { "$ref": "./login/loginInvalid.json" },
-        { "$ref": "./login/loginMissingField.json" }
+        {
+          "$ref": "./login/loginInvalid.json"
+        },
+        {
+          "$ref": "./login/loginMissingField.json"
+        },
+        {
+          "$ref": "./login/loginInvalidAfterDelete.json"
+        }
       ]
     },
     {
       "name": "Register",
       "item": [
-        { "$ref": "./register/registerDuplicate.json" },
-        { "$ref": "./register/registerEmptyBody.json" },
-        { "$ref": "./register/registerInvalidEmail.json" },
-        { "$ref": "./register/registerInvalidUsername.json" },
-        { "$ref": "./register/registerMissingField.json" },
-        { "$ref": "./register/registerShortPassword.json" },
-        { "$ref": "./register/wrongContentType.json" }
+        {
+          "$ref": "./register/registerDuplicate.json"
+        },
+        {
+          "$ref": "./register/registerEmptyBody.json"
+        },
+        {
+          "$ref": "./register/registerInvalidEmail.json"
+        },
+        {
+          "$ref": "./register/registerInvalidUsername.json"
+        },
+        {
+          "$ref": "./register/registerMissingField.json"
+        },
+        {
+          "$ref": "./register/registerNullEmail.json"
+        },
+        {
+          "$ref": "./register/registerNullPassword.json"
+        },
+        {
+          "$ref": "./register/registerNullUsername.json"
+        },
+        {
+          "$ref": "./register/registerPasswordNotString.json"
+        },
+        {
+          "$ref": "./register/registerShortPassword.json"
+        },
+        {
+          "$ref": "./register/wrongContentType.json"
+        }
       ]
     },
     {
       "name": "User",
       "item": [
-        { "$ref": "./user/deleteUserNotFound.json" },
-        { "$ref": "./user/getUserNotFound.json" }
+        {
+          "$ref": "./user/deleteUserNotFound.json"
+        },
+        {
+          "$ref": "./user/getUserNotFound.json"
+        },
+        {
+          "$ref": "./user/getUserNotFoundAfterDelete.json"
+        }
       ]
     }
   ]

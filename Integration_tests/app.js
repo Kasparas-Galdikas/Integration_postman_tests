@@ -11,7 +11,14 @@ const PORT = 3000;
  
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json({ error: "Invalid JSON" });
+  }
+  next();
+});
+
  
 // In-Memory User Data (Stores registered users)
 let users = [];

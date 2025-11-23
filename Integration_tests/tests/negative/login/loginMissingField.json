@@ -1,47 +1,200 @@
 {
-  "info": { "name": "negative - login - missingField", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
-  "item": [{
-    "name": "Login – trūksta lauko (401)",
-    "event": [
-      {
-        "listen": "prerequest",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "const id = Date.now();",
-            "pm.collectionVariables.set('neg_login2_user', `neg_login_miss_${id}`);",
-            "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
-            "pm.sendRequest({",
-            "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
-            "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_login2_user'), fullName:'Neg Login Miss', email:`negloginmiss_${id}@ex.com`, password:'secret1' })}",
-            "});",
-            "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
-          ]
+  "info": {
+    "name": "negative - login - missingField",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login – trūksta password (401)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = Date.now();",
+              "pm.collectionVariables.set('neg_login2_user', `neg_login_miss_${id}`);",
+              "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+              "pm.sendRequest({",
+              "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+              "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_login2_user'), fullName:'Neg Login Miss', email:`negloginmiss_${id}@ex.com`, password:'secret1' })}",
+              "});",
+              "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+              "const j = pm.response.json();",
+              "pm.test('Error struktūra', () => pm.expect(j).to.have.property('error'));",
+              "pm.test('Error tekstas tikslus', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+              "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+              "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+            ]
+          }
         }
-      },
-      {
-        "listen": "test",
-        "script": {
-          "type": "text/javascript",
-          "exec": [
-            "pm.test('Status 401', () => pm.response.to.have.status(401));",
-            "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
-            "const j = pm.response.json();",
-            "pm.test('Error struktūra', () => pm.expect(j).to.have.property('error'));",
-            "pm.test('Error tekstas tikslus', () => pm.expect(j.error).to.equal('Invalid username or password'));",
-            "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
-            "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{neg_login2_user}}\"\n}"
         }
       }
-    ],
-    "request": {
-      "method": "POST",
-      "header": [{ "key": "Content-Type", "value": "application/json" }],
-      "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] },
-      "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{neg_login2_user}}\"\n}" }
     },
-    "response": []
-  }],
-  "variable": [{ "key": "baseUrl", "value": "http://localhost:3000" }]
+    {
+      "name": "Login – trūksta username (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+              "const j = pm.response.json();",
+              "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+              "pm.test('Error = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+              "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+              "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"secret1\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Login – tuščias body (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+              "const j = pm.response.json();",
+              "pm.test('Yra error laukas', () => pm.expect(j).to.have.property('error'));",
+              "pm.test('Error tekstas = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+              "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+              "pm.test('Teisingas endpoint', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "Login – neteisingas Content-Type (500 expected)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 500', () => pm.response.to.have.status(500));",
+              "pm.test('Content-Type yra HTML (Body parser klaida)', () => {",
+              "  const ct = pm.response.headers.get('Content-Type');",
+              "  pm.expect(ct).to.match(/text\\/html|text\\/plain/i);",
+              "});",
+              "// NEGALIMA bandyti j = pm.response.json(), nes body HTML",
+              "pm.test('Klaida yra HTML formate', () => {",
+              "  pm.expect(pm.response.text()).to.include('<');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "username=test&password=whatever"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
 }

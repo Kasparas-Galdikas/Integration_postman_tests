@@ -26,7 +26,10 @@ function expandItem(item, baseDir) {
         const refJson = JSON.parse(fs.readFileSync(refFile, "utf8"));
 
         if (Array.isArray(refJson.item)) {
-            return refJson.item[0];
+            return {
+                name: item.name || refJson.info?.name || "Imported",
+                item: refJson.item
+            };
         }
         return refJson;
     }

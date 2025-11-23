@@ -1,0 +1,2851 @@
+{
+  "info": {
+    "name": "All Scenarios Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Scenario – full_user_flow",
+      "item": [
+        {
+          "name": "positive - register - userRegister",
+          "item": [
+            {
+              "name": "Registracija – sėkmė (POST /register)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('regUsername', `user_pos_reg_${id}`);",
+                      "pm.collectionVariables.set('regFullName', '  <script>alert(1)</script>  ');",
+                      "pm.collectionVariables.set('regEmail', `posreg_${id}@example.com`);",
+                      "pm.collectionVariables.set('regPassword', 'secret1');",
+                      "",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.collectionVariables.set('baseUrl', base);",
+                      "",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  pm.collectionVariables.set('usersBefore', arr.length);",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status",
+                      "pm.test('Status 201 (sukurta)', () => pm.response.to.have.status(201));",
+                      "",
+                      "// 2) JSON response",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "const body = pm.response.json();",
+                      "",
+                      "// 3) Base structure",
+                      "pm.test('Atsakymas turi message ir user', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body).to.have.property('user');",
+                      "});",
+                      "",
+                      "// 4) Tik 3 laukų ir be password",
+                      "pm.test('User turi TIK username/email/fullName laukus', () => {",
+                      "  pm.expect(Object.keys(body.user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "pm.test('Atsakyme nėra jokio password lauko', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality",
+                      "pm.test('User STRICT sutampa su siųstais duomenimis (po escape/trim)', () => {",
+                      "  const expectedFullName = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "  pm.expect(body.user).to.eql({",
+                      "    username: pm.collectionVariables.get('regUsername'),",
+                      "    email: pm.collectionVariables.get('regEmail'),",
+                      "    fullName: expectedFullName",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test (express-validator.escape realus rezultatas)",
+                      "pm.test('FullName escape patikrintas', () => {",
+                      "  pm.expect(body.user.fullName).to.equal('&lt;script&gt;alert(1)&lt;&#x2F;script&gt;');",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName buvo apkarpytas (trim)', () => {",
+                      "  pm.expect(body.user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(body.user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Teisingas endpoint (/register)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/register$/);",
+                      "});",
+                      "",
+                      "// 9) Confirm user exists via GET /user/:username",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "const u = pm.collectionVariables.get('regUsername');",
+                      "",
+                      "pm.sendRequest({ url: `${base}/user/${u}`, method: 'GET' }, (err, res) => {",
+                      "  const j = res.json();",
+                      "  pm.test('GET /user/:username grąžina 200', () => pm.expect(res.code).to.equal(200));",
+                      "  pm.test('GET grąžina TIK 3 laukus', () => {",
+                      "    pm.expect(Object.keys(j)).to.have.members(['username', 'email', 'fullName']);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 10) Confirm users list increased",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  const before = Number(pm.collectionVariables.get('usersBefore'));",
+                      "  pm.test('users masyvas padidėjo 1 vnt.', () => {",
+                      "    pm.expect(arr.length).to.equal(before + 1);",
+                      "  });",
+                      "  pm.test('Naujai registruotas vartotojas yra masyve', () => {",
+                      "    const exists = arr.some(u => u.username === pm.collectionVariables.get('regUsername'));",
+                      "    pm.expect(exists).to.be.true;",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{regUsername}}\",\n  \"fullName\": \"{{regFullName}}\",\n  \"email\": \"{{regEmail}}\",\n  \"password\": \"{{regPassword}}\"\n}"
+                },
+                "description": "Išplėstinis registracijos testas su escape, trim, security ir users state tikrinimu."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - login - userLogin",
+          "item": [
+            {
+              "name": "Prisijungimas – sėkmė (POST /login)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Dinaminės reikšmės, kad testas būtų kartotinas",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('loginUsername', `user_pos_login_${id}`);",
+                      "pm.collectionVariables.set('loginFullName', 'User Positive Login');",
+                      "pm.collectionVariables.set('loginEmail', `poslogin_${id}@example.com`);",
+                      "pm.collectionVariables.set('loginPassword', 'secret1');",
+                      "",
+                      "// Numatytasis baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "",
+                      "// Užregistruojame vartotoją prieš login",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: {",
+                      "    mode: 'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('loginUsername'),",
+                      "      fullName: pm.collectionVariables.get('loginFullName'),",
+                      "      email: pm.collectionVariables.get('loginEmail'),",
+                      "      password: pm.collectionVariables.get('loginPassword')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// === 1) Status ===",
+                      "pm.test('Status 200 (OK)', () => pm.response.to.have.status(200));",
+                      "",
+                      "// === 2) Content-Type JSON ===",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  const ctype = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const body = pm.response.json();",
+                      "",
+                      "// === 3) message + user struktūra ===",
+                      "pm.test('Atsakymas turi message ir user laukus', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body).to.have.property('user');",
+                      "});",
+                      "",
+                      "// === 4) User laukų struktūra: turi TIK 3 laukus ===",
+                      "pm.test('user turi TIK username/email/fullName laukus', () => {",
+                      "  const expected = ['username', 'email', 'fullName'];",
+                      "  pm.expect(Object.keys(body.user)).to.have.members(expected);",
+                      "});",
+                      "",
+                      "// === 5) Password saugumas: neturi būti niekur ===",
+                      "pm.test('Atsakyme nėra jokio password lauko', () => {",
+                      "  const responseText = pm.response.text();",
+                      "  pm.expect(responseText.toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// === 6) Tiksliai sutampa su registruotais (STRICT match) ===",
+                      "pm.test('Login atsakymas STRICT sutampa su registruotais duomenimis', () => {",
+                      "  pm.expect(body.user).to.eql({",
+                      "    username: pm.collectionVariables.get('loginUsername'),",
+                      "    fullName: pm.collectionVariables.get('loginFullName'),",
+                      "    email: pm.collectionVariables.get('loginEmail')",
+                      "  });",
+                      "});",
+                      "",
+                      "// === 7) Endpoint verifikacija ===",
+                      "pm.test('Teisingas endpoint (/login)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/login$/);",
+                      "});",
+                      "",
+                      "// === 8) loggedInUser pasikeitė (netiesioginis testas per GET /user) ===",
+                      "pm.test('loggedInUser pasikeitė (GET /user patvirtina)', (done) => {",
+                      "  const base = pm.collectionVariables.get('baseUrl');",
+                      "  const username = pm.collectionVariables.get('loginUsername');",
+                      "",
+                      "  pm.sendRequest({ url: `${base}/user/${username}`, method: 'GET' }, (err, res) => {",
+                      "    pm.expect(res.code).to.equal(200);",
+                      "    const j = res.json();",
+                      "    pm.expect(j.username).to.eql(username);",
+                      "    pm.expect(j).to.not.have.property('password');",
+                      "    done();",
+                      "  });",
+                      "});",
+                      "",
+                      "// === 9) Login edge-case: su tarpais neturi veikti ===",
+                      "pm.test('Login su papildomais tarpais NEGALI veikti', (done) => {",
+                      "  const base = pm.collectionVariables.get('baseUrl');",
+                      "  const badUsername = '   ' + pm.collectionVariables.get('loginUsername') + '   ';",
+                      "",
+                      "  pm.sendRequest({",
+                      "    url: `${base}/login`,",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json' },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({",
+                      "        username: badUsername,",
+                      "        password: pm.collectionVariables.get('loginPassword')",
+                      "      })",
+                      "    }",
+                      "  }, (err, res) => {",
+                      "    pm.expect(res.code).to.equal(401);",
+                      "    done();",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{loginUsername}}\",\n  \"password\": \"{{loginPassword}}\"\n}"
+                },
+                "description": "Prisijungimo sėkmės scenarijus su pilnais gilesniais testais."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - user - getUser",
+          "item": [
+            {
+              "name": "Gauti vartotoją – sėkmė (GET /user/:username)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sugeneruojame unikalias reikšmes",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('u_username', `user_pos_get_${id}`);",
+                      "pm.collectionVariables.set('u_fullName_raw', '   <script>alert(1)</script>   ');",
+                      "pm.collectionVariables.set('u_email', `posget_${id}@example.com`);",
+                      "pm.collectionVariables.set('u_password', 'secret1');",
+                      "",
+                      "// Tikrasis escaped + trimmed variantas (pagal express-validator.escape())",
+                      "const expectedEscaped = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "pm.collectionVariables.set('u_fullName_expected', expectedEscaped);",
+                      "",
+                      "// Užtikriname baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// Registruojame vartotoją prieš GET",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type':'application/json' },",
+                      "  body: {",
+                      "    mode:'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('u_username'),",
+                      "      fullName: pm.collectionVariables.get('u_fullName_raw'),",
+                      "      email: pm.collectionVariables.get('u_email'),",
+                      "      password: pm.collectionVariables.get('u_password')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status 200",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON formatas",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const user = pm.response.json();",
+                      "",
+                      "// 3) TIK 3 laukų grąžinimas",
+                      "pm.test('User turi TIK 3 laukus', () => {",
+                      "  pm.expect(Object.keys(user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "",
+                      "// 4) Visiškai nėra password visame atsakyme",
+                      "pm.test('Atsakyme apskritai nėra password', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality tikrinimas",
+                      "pm.test('Strict equality: visi laukai sutampa', () => {",
+                      "  pm.expect(user).to.eql({",
+                      "    username: pm.collectionVariables.get('u_username'),",
+                      "    email: pm.collectionVariables.get('u_email'),",
+                      "    fullName: pm.collectionVariables.get('u_fullName_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test",
+                      "pm.test('FullName escape teisingas', () => {",
+                      "  pm.expect(user.fullName).to.equal(pm.collectionVariables.get('u_fullName_expected'));",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName neturi whitespace prieš/po', () => {",
+                      "  pm.expect(user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Naudojamas teisingas user endpoint', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/user/{{u_username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "{{u_username}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - user - getUsers",
+          "item": [
+            {
+              "name": "Gauti visus vartotojus – sėkmė (GET /users)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Unikalūs duomenys",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('u1', `user_pos_list1_${id}`);",
+                      "pm.collectionVariables.set('u2', `user_pos_list2_${id}`);",
+                      "",
+                      "// XSS ir trim testams",
+                      "pm.collectionVariables.set('u1_full_raw', '   <script>Hi1</script>   ');",
+                      "pm.collectionVariables.set('u2_full_raw', '   <script>Hi2</script>   ');",
+                      "",
+                      "// Expected escaped (pagal express-validator.escape())",
+                      "const esc1 = '&lt;script&gt;Hi1&lt;&#x2F;script&gt;';",
+                      "const esc2 = '&lt;script&gt;Hi2&lt;&#x2F;script&gt;';",
+                      "pm.collectionVariables.set('u1_full_expected', esc1);",
+                      "pm.collectionVariables.set('u2_full_expected', esc2);",
+                      "",
+                      "// Emailai",
+                      "pm.collectionVariables.set('u1_email', `poslist1_${id}@example.com`);",
+                      "pm.collectionVariables.set('u2_email', `poslist2_${id}@example.com`);",
+                      "",
+                      "// Užtikriname baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// Registruojame abu vartotojus",
+                      "const register = (username, fullName, email) => {",
+                      "  pm.sendRequest({",
+                      "    url: `${base}/register`,",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json' },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({",
+                      "        username,",
+                      "        fullName,",
+                      "        email,",
+                      "        password: 'secret1'",
+                      "      })",
+                      "    }",
+                      "  });",
+                      "};",
+                      "",
+                      "register(pm.collectionVariables.get('u1'), pm.collectionVariables.get('u1_full_raw'), pm.collectionVariables.get('u1_email'));",
+                      "register(pm.collectionVariables.get('u2'), pm.collectionVariables.get('u2_full_raw'), pm.collectionVariables.get('u2_email'));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON header",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "",
+                      "// 3) Response yra masyvas",
+                      "const arr = pm.response.json();",
+                      "pm.test('Atsakymas yra masyvas', () => pm.expect(arr).to.be.an('array'));",
+                      "",
+                      "// 4) Password neturi būti NIEKUR visame tekste",
+                      "pm.test('Nėra password visame response', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) Kiekvienas user turi TIK šiuos laukus",
+                      "pm.test('Kiekvienas user turi tik username/email/fullName', () => {",
+                      "  arr.forEach(u => {",
+                      "    pm.expect(Object.keys(u)).to.have.members(['username', 'email', 'fullName']);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Turi būti abu naujai sukurti vartotojai",
+                      "pm.test('Masive yra u1 ir u2', () => {",
+                      "  const usernames = arr.map(u => u.username);",
+                      "  pm.expect(usernames).to.include(pm.collectionVariables.get('u1'));",
+                      "  pm.expect(usernames).to.include(pm.collectionVariables.get('u2'));",
+                      "});",
+                      "",
+                      "// 7) STRICT equality naujiems vartotojams",
+                      "pm.test('u1 STRICT equality', () => {",
+                      "  const u = arr.find(x => x.username === pm.collectionVariables.get('u1'));",
+                      "  pm.expect(u).to.eql({",
+                      "    username: pm.collectionVariables.get('u1'),",
+                      "    email: pm.collectionVariables.get('u1_email'),",
+                      "    fullName: pm.collectionVariables.get('u1_full_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "pm.test('u2 STRICT equality', () => {",
+                      "  const u = arr.find(x => x.username === pm.collectionVariables.get('u2'));",
+                      "  pm.expect(u).to.eql({",
+                      "    username: pm.collectionVariables.get('u2'),",
+                      "    email: pm.collectionVariables.get('u2_email'),",
+                      "    fullName: pm.collectionVariables.get('u2_full_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "// 8) XSS escape test",
+                      "pm.test('XSS escape suveikė abu kartus', () => {",
+                      "  const u1 = arr.find(x => x.username === pm.collectionVariables.get('u1'));",
+                      "  const u2 = arr.find(x => x.username === pm.collectionVariables.get('u2'));",
+                      "  pm.expect(u1.fullName).to.equal(pm.collectionVariables.get('u1_full_expected'));",
+                      "  pm.expect(u2.fullName).to.equal(pm.collectionVariables.get('u2_full_expected'));",
+                      "});",
+                      "",
+                      "// 9) Trim test",
+                      "pm.test('Trim suveikė visiems vartotojams', () => {",
+                      "  arr.forEach(u => {",
+                      "    pm.expect(u.fullName.startsWith(' ')).to.be.false;",
+                      "    pm.expect(u.fullName.endsWith(' ')).to.be.false;",
+                      "  });",
+                      "});",
+                      "",
+                      "// 10) Teisingas endpoint",
+                      "pm.test('Teisingas endpoint (/users)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.eql('/users');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - user - deleteUser",
+          "item": [
+            {
+              "name": "Ištrinti vartotoją – sėkmė (DELETE /delete-user/:username)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Unikalus ID",
+                      "const id = Date.now();",
+                      "",
+                      "// 🔧 Laukai",
+                      "pm.collectionVariables.set('du_username', `user_pos_del_${id}`);",
+                      "pm.collectionVariables.set('du_full_raw', '   <script>Delete</script>   ');",
+                      "pm.collectionVariables.set('du_email', `posdel_${id}@example.com`);",
+                      "pm.collectionVariables.set('du_password', 'secret1');",
+                      "",
+                      "// 🔧 Expected escaped (pagal express-validator.escape())",
+                      "pm.collectionVariables.set('du_full_expected', '&lt;script&gt;Delete&lt;&#x2F;script&gt;');",
+                      "",
+                      "// 🔧 Base URL",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// 🔥 Gauti dabartinį vartotojų kiekį",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  pm.collectionVariables.set('countBefore', arr.length);",
+                      "});",
+                      "",
+                      "// 🔥 Užregistruojame vartotoją, kurį trinsime",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: {",
+                      "    mode: 'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('du_username'),",
+                      "      fullName: pm.collectionVariables.get('du_full_raw'),",
+                      "      email: pm.collectionVariables.get('du_email'),",
+                      "      password: pm.collectionVariables.get('du_password')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const username = pm.collectionVariables.get('du_username');",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// 1) Status",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON header",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "",
+                      "// 3) Password neturi būti niekur",
+                      "pm.test('Nėra password jokioje atsakymo dalyje', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "const body = pm.response.json();",
+                      "",
+                      "// 4) Message lauką turi turėti ir jame yra username",
+                      "pm.test('Atsakymas turi teisingą message', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body.message).to.match(new RegExp(username));",
+                      "});",
+                      "",
+                      "// 5) Strict endpoint validation",
+                      "pm.test('Teisingas endpoint DELETE /delete-user/:username', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/^\\/delete-user\\/[A-Za-z0-9_]+$/);",
+                      "});",
+                      "",
+                      "// 🔥 6) Patikrinti ar vartotojas IŠTIES ištrintas",
+                      "pm.sendRequest({ url: `${base}/user/${username}`, method: 'GET' }, (err, res) => {",
+                      "  pm.test('Po DELETE – GET /user/:username grąžina 404', () => {",
+                      "    pm.expect(res.code).to.eql(404);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 🔥 7) Patikrinti masyvo dydžio sumažėjimą",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  const before = Number(pm.collectionVariables.get('countBefore'));",
+                      "",
+                      "  pm.test('Users masyvas sumažėjo 1 vnt.', () => {",
+                      "    pm.expect(arr.length).to.equal(before);",
+                      "  });",
+                      "",
+                      "  pm.test('Ištrintas vartotojas nebėra masyve', () => {",
+                      "    const exists = arr.some(u => u.username === username);",
+                      "    pm.expect(exists).to.be.false;",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/delete-user/{{du_username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "delete-user",
+                    "{{du_username}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - user - getUserNotFoundAfterDelete",
+          "item": [
+            {
+              "name": "GET /user/:username – 404 po ištrynimo",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Dinaminiai kintamieji",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('delUser404', `user_get404_${id}`);",
+                      "pm.collectionVariables.set('delUserEmail404', `get404_${id}@example.com`);",
+                      "",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "",
+                      "// 1) Sukuriame vartotoją",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: { mode: 'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('delUser404'),",
+                      "    fullName: 'User For 404 Check',",
+                      "    email: pm.collectionVariables.get('delUserEmail404'),",
+                      "    password: 'secret1'",
+                      "  }) }",
+                      "}, (err, res) => {/* nereikia testų prerequest'e */});",
+                      "",
+                      "// 2) Ištriname vartotoją",
+                      "pm.sendRequest({",
+                      "  url: `${base}/delete-user/${pm.collectionVariables.get('delUser404')}`,",
+                      "  method: 'DELETE'",
+                      "}, (err, res) => {/* deletion done */});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Tikriname, kad GET grąžina 404 po delete",
+                      "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                      "",
+                      "// JSON Content-Type (leidžiame ; charset=utf-8)",
+                      "pm.test('Content-Type JSON', () => {",
+                      "  const ct = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ct).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const body = pm.response.json();",
+                      "",
+                      "// Tikriname error struktūrą",
+                      "pm.test('Atsakyme yra error', () => pm.expect(body).to.have.property('error'));",
+                      "pm.test('Error = User not found', () => pm.expect(body.error).to.equal('User not found'));",
+                      "",
+                      "// Neturi būti user objekto",
+                      "pm.test('Nėra user objekto', () => pm.expect(body).to.not.have.property('user'));",
+                      "",
+                      "// Endpoint patikra",
+                      "pm.test('Teisingas endpoint /user/:username', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/user/{{delUser404}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "{{delUser404}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - user - logout",
+          "item": [
+            {
+              "name": "Atsijungti – sėkmė (POST /logout)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Sukuriame user ir prisijungiame prieš logout testą",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('lg_username', `userPosLogout${id}`);",
+                      "pm.collectionVariables.set('lg_fullName', 'User Positive Logout');",
+                      "pm.collectionVariables.set('lg_email', `poslogout${id}@example.com`);",
+                      "pm.collectionVariables.set('lg_password', 'secret123');",
+                      "// Base URL",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "// Registracija",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: { mode:'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('lg_username'),",
+                      "    fullName: pm.collectionVariables.get('lg_fullName'),",
+                      "    email: pm.collectionVariables.get('lg_email'),",
+                      "    password: pm.collectionVariables.get('lg_password')",
+                      "  })}",
+                      "});",
+                      "// Login",
+                      "pm.sendRequest({",
+                      "  url: `${base}/login`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: { mode:'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('lg_username'),",
+                      "    password: pm.collectionVariables.get('lg_password')",
+                      "  })}",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// === 1. Status ===",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "// === 2. JSON ===",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  const ctype = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ctype).to.match(/^application\\/json/i);",
+                      "});",
+                      "const body = pm.response.json();",
+                      "// === 3. Message ===",
+                      "pm.test('Atsakymas turi message', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body.message.toLowerCase()).to.include('logged out');",
+                      "});",
+                      "// === 4. Teisingas endpoint ===",
+                      "pm.test('Teisingas endpoint', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.eql('/logout');",
+                      "});",
+                      "// === 5. loggedInUser nulintas (netiesioginė validacija) ===",
+                      "// Negalime tikrinti GET /user/, nes vartotojas TEBEEXISTUOJA masyve.",
+                      "// Tikriname, kad atsakymas patvirtina logout.",
+                      "pm.test('Logout įvyko sėkmingai', () => {",
+                      "  pm.expect(body.message).to.match(/logged out|logout/i);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - login - invalidAfterDelete",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 🔧 Visada nustatome baseUrl",
+                  "pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                  "",
+                  "// 🔧 Dinaminiai kintamieji",
+                  "const id = Date.now();",
+                  "pm.collectionVariables.set('delLoginUser', `user_after_delete_${id}`);",
+                  "pm.collectionVariables.set('delLoginPass', 'secret1');",
+                  "",
+                  "const base = pm.collectionVariables.get('baseUrl');",
+                  "",
+                  "// 1) Sukuriame vartotoją",
+                  "pm.sendRequest({",
+                  "  url: `${base}/register`,",
+                  "  method: 'POST',",
+                  "  header: { 'Content-Type': 'application/json' },",
+                  "  body: { mode: 'raw', raw: JSON.stringify({",
+                  "    username: pm.collectionVariables.get('delLoginUser'),",
+                  "    fullName: 'User After Delete',",
+                  "    email: `after_delete_${id}@example.com`,",
+                  "    password: pm.collectionVariables.get('delLoginPass')",
+                  "  }) }",
+                  "}, () => {});",
+                  "",
+                  "// 2) Ištriname vartotoją",
+                  "pm.sendRequest({",
+                  "  url: `${base}/delete-user/${pm.collectionVariables.get('delLoginUser')}`,",
+                  "  method: 'DELETE'",
+                  "}, () => {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 1) LOGIN po delete → turi būti 401",
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "",
+                  "// 2) JSON Content-Type",
+                  "pm.test('Content-Type JSON', () => {",
+                  "  const ct = pm.response.headers.get('Content-Type');",
+                  "  pm.expect(ct).to.match(/^application\\/json\\b/i);",
+                  "});",
+                  "",
+                  "const j = pm.response.json();",
+                  "",
+                  "// 3) Error laukas",
+                  "pm.test('Atsakyme yra error', () => pm.expect(j).to.have.property('error'));",
+                  "pm.test('Error tekstas = Invalid username or password', () => {",
+                  "  pm.expect(j.error).to.equal('Invalid username or password');",
+                  "});",
+                  "",
+                  "// 4) User objekto neturi būti",
+                  "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                  "",
+                  "// 5) Endpoint",
+                  "pm.test('Teisingas endpoint /login', () => {",
+                  "  pm.expect(pm.request.url.getPath()).to.eql('/login');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{delLoginUser}}\",\n  \"password\": \"{{delLoginPass}}\"\n}"
+            },
+            "description": "Login turėtų nepavykti, nes vartotojas buvo ištrintas prieš tai."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenario – register_happy_path",
+      "item": [
+        {
+          "name": "positive - register - userRegister",
+          "item": [
+            {
+              "name": "Registracija – sėkmė (POST /register)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('regUsername', `user_pos_reg_${id}`);",
+                      "pm.collectionVariables.set('regFullName', '  <script>alert(1)</script>  ');",
+                      "pm.collectionVariables.set('regEmail', `posreg_${id}@example.com`);",
+                      "pm.collectionVariables.set('regPassword', 'secret1');",
+                      "",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.collectionVariables.set('baseUrl', base);",
+                      "",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  pm.collectionVariables.set('usersBefore', arr.length);",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status",
+                      "pm.test('Status 201 (sukurta)', () => pm.response.to.have.status(201));",
+                      "",
+                      "// 2) JSON response",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "const body = pm.response.json();",
+                      "",
+                      "// 3) Base structure",
+                      "pm.test('Atsakymas turi message ir user', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body).to.have.property('user');",
+                      "});",
+                      "",
+                      "// 4) Tik 3 laukų ir be password",
+                      "pm.test('User turi TIK username/email/fullName laukus', () => {",
+                      "  pm.expect(Object.keys(body.user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "pm.test('Atsakyme nėra jokio password lauko', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality",
+                      "pm.test('User STRICT sutampa su siųstais duomenimis (po escape/trim)', () => {",
+                      "  const expectedFullName = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "  pm.expect(body.user).to.eql({",
+                      "    username: pm.collectionVariables.get('regUsername'),",
+                      "    email: pm.collectionVariables.get('regEmail'),",
+                      "    fullName: expectedFullName",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test (express-validator.escape realus rezultatas)",
+                      "pm.test('FullName escape patikrintas', () => {",
+                      "  pm.expect(body.user.fullName).to.equal('&lt;script&gt;alert(1)&lt;&#x2F;script&gt;');",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName buvo apkarpytas (trim)', () => {",
+                      "  pm.expect(body.user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(body.user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Teisingas endpoint (/register)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/register$/);",
+                      "});",
+                      "",
+                      "// 9) Confirm user exists via GET /user/:username",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "const u = pm.collectionVariables.get('regUsername');",
+                      "",
+                      "pm.sendRequest({ url: `${base}/user/${u}`, method: 'GET' }, (err, res) => {",
+                      "  const j = res.json();",
+                      "  pm.test('GET /user/:username grąžina 200', () => pm.expect(res.code).to.equal(200));",
+                      "  pm.test('GET grąžina TIK 3 laukus', () => {",
+                      "    pm.expect(Object.keys(j)).to.have.members(['username', 'email', 'fullName']);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 10) Confirm users list increased",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  const before = Number(pm.collectionVariables.get('usersBefore'));",
+                      "  pm.test('users masyvas padidėjo 1 vnt.', () => {",
+                      "    pm.expect(arr.length).to.equal(before + 1);",
+                      "  });",
+                      "  pm.test('Naujai registruotas vartotojas yra masyve', () => {",
+                      "    const exists = arr.some(u => u.username === pm.collectionVariables.get('regUsername'));",
+                      "    pm.expect(exists).to.be.true;",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{regUsername}}\",\n  \"fullName\": \"{{regFullName}}\",\n  \"email\": \"{{regEmail}}\",\n  \"password\": \"{{regPassword}}\"\n}"
+                },
+                "description": "Išplėstinis registracijos testas su escape, trim, security ir users state tikrinimu."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "positive - user - getUser",
+          "item": [
+            {
+              "name": "Gauti vartotoją – sėkmė (GET /user/:username)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sugeneruojame unikalias reikšmes",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('u_username', `user_pos_get_${id}`);",
+                      "pm.collectionVariables.set('u_fullName_raw', '   <script>alert(1)</script>   ');",
+                      "pm.collectionVariables.set('u_email', `posget_${id}@example.com`);",
+                      "pm.collectionVariables.set('u_password', 'secret1');",
+                      "",
+                      "// Tikrasis escaped + trimmed variantas (pagal express-validator.escape())",
+                      "const expectedEscaped = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "pm.collectionVariables.set('u_fullName_expected', expectedEscaped);",
+                      "",
+                      "// Užtikriname baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// Registruojame vartotoją prieš GET",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type':'application/json' },",
+                      "  body: {",
+                      "    mode:'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('u_username'),",
+                      "      fullName: pm.collectionVariables.get('u_fullName_raw'),",
+                      "      email: pm.collectionVariables.get('u_email'),",
+                      "      password: pm.collectionVariables.get('u_password')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status 200",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON formatas",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const user = pm.response.json();",
+                      "",
+                      "// 3) TIK 3 laukų grąžinimas",
+                      "pm.test('User turi TIK 3 laukus', () => {",
+                      "  pm.expect(Object.keys(user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "",
+                      "// 4) Visiškai nėra password visame atsakyme",
+                      "pm.test('Atsakyme apskritai nėra password', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality tikrinimas",
+                      "pm.test('Strict equality: visi laukai sutampa', () => {",
+                      "  pm.expect(user).to.eql({",
+                      "    username: pm.collectionVariables.get('u_username'),",
+                      "    email: pm.collectionVariables.get('u_email'),",
+                      "    fullName: pm.collectionVariables.get('u_fullName_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test",
+                      "pm.test('FullName escape teisingas', () => {",
+                      "  pm.expect(user.fullName).to.equal(pm.collectionVariables.get('u_fullName_expected'));",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName neturi whitespace prieš/po', () => {",
+                      "  pm.expect(user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Naudojamas teisingas user endpoint', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/user/{{u_username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "{{u_username}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – register_duplicate",
+      "item": [
+        {
+          "name": "positive - register - userRegister",
+          "item": [
+            {
+              "name": "Registracija – sėkmė (POST /register)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('regUsername', `user_pos_reg_${id}`);",
+                      "pm.collectionVariables.set('regFullName', '  <script>alert(1)</script>  ');",
+                      "pm.collectionVariables.set('regEmail', `posreg_${id}@example.com`);",
+                      "pm.collectionVariables.set('regPassword', 'secret1');",
+                      "",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.collectionVariables.set('baseUrl', base);",
+                      "",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  pm.collectionVariables.set('usersBefore', arr.length);",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status",
+                      "pm.test('Status 201 (sukurta)', () => pm.response.to.have.status(201));",
+                      "",
+                      "// 2) JSON response",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "const body = pm.response.json();",
+                      "",
+                      "// 3) Base structure",
+                      "pm.test('Atsakymas turi message ir user', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body).to.have.property('user');",
+                      "});",
+                      "",
+                      "// 4) Tik 3 laukų ir be password",
+                      "pm.test('User turi TIK username/email/fullName laukus', () => {",
+                      "  pm.expect(Object.keys(body.user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "pm.test('Atsakyme nėra jokio password lauko', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality",
+                      "pm.test('User STRICT sutampa su siųstais duomenimis (po escape/trim)', () => {",
+                      "  const expectedFullName = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "  pm.expect(body.user).to.eql({",
+                      "    username: pm.collectionVariables.get('regUsername'),",
+                      "    email: pm.collectionVariables.get('regEmail'),",
+                      "    fullName: expectedFullName",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test (express-validator.escape realus rezultatas)",
+                      "pm.test('FullName escape patikrintas', () => {",
+                      "  pm.expect(body.user.fullName).to.equal('&lt;script&gt;alert(1)&lt;&#x2F;script&gt;');",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName buvo apkarpytas (trim)', () => {",
+                      "  pm.expect(body.user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(body.user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Teisingas endpoint (/register)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/register$/);",
+                      "});",
+                      "",
+                      "// 9) Confirm user exists via GET /user/:username",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "const u = pm.collectionVariables.get('regUsername');",
+                      "",
+                      "pm.sendRequest({ url: `${base}/user/${u}`, method: 'GET' }, (err, res) => {",
+                      "  const j = res.json();",
+                      "  pm.test('GET /user/:username grąžina 200', () => pm.expect(res.code).to.equal(200));",
+                      "  pm.test('GET grąžina TIK 3 laukus', () => {",
+                      "    pm.expect(Object.keys(j)).to.have.members(['username', 'email', 'fullName']);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 10) Confirm users list increased",
+                      "pm.sendRequest({ url: `${base}/users`, method: 'GET' }, (err, res) => {",
+                      "  const arr = res.json();",
+                      "  const before = Number(pm.collectionVariables.get('usersBefore'));",
+                      "  pm.test('users masyvas padidėjo 1 vnt.', () => {",
+                      "    pm.expect(arr.length).to.equal(before + 1);",
+                      "  });",
+                      "  pm.test('Naujai registruotas vartotojas yra masyve', () => {",
+                      "    const exists = arr.some(u => u.username === pm.collectionVariables.get('regUsername'));",
+                      "    pm.expect(exists).to.be.true;",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{regUsername}}\",\n  \"fullName\": \"{{regFullName}}\",\n  \"email\": \"{{regEmail}}\",\n  \"password\": \"{{regPassword}}\"\n}"
+                },
+                "description": "Išplėstinis registracijos testas su escape, trim, security ir users state tikrinimu."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - duplicate",
+          "item": [
+            {
+              "name": "Registracija – dublikatas (400)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('neg_dup_user', `neg_dup_${id}`);",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.sendRequest({",
+                      "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+                      "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_dup_user'), fullName:'Neg Dup', email:`negdup1_${id}@ex.com`, password:'secret1' })}",
+                      "});",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error tekstas = Username already exists', () => pm.expect(j.error).to.equal('Username already exists'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{neg_dup_user}}\",\n  \"fullName\": \"Neg Dup 2\",\n  \"email\": \"negdup2@example.com\",\n  \"password\": \"secret1\"\n}"
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – register_invalid_inputs",
+      "item": [
+        {
+          "name": "negative - register - invalidUsername",
+          "item": [
+            {
+              "name": "Registracija – blogas username (400, validatorius)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"varto*jas\",\n  \"fullName\": \"Net Username\",\n  \"email\": \"baduser@example.com\",\n  \"password\": \"secret1\"\n}"
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - invalidEmail",
+          "item": [
+            {
+              "name": "Registracija – blogas el. paštas (400, validatorius)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user_neg_badmail\",\n  \"fullName\": \"User Neg BadMail\",\n  \"email\": \"not-an-email\",\n  \"password\": \"secret1\"\n}"
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - shortPassword",
+          "item": [
+            {
+              "name": "Registracija – per trumpas slaptažodis (400, validatorius)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user_neg_short\",\n  \"fullName\": \"Short Pass\",\n  \"email\": \"short@example.com\",\n  \"password\": \"123\"\n}"
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - missingField",
+          "item": [
+            {
+              "name": "Registracija – trūksta lauko (400, validatorius)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"user_neg_missing\",\n  \"fullName\": \"User Neg Missing\",\n  \"email\": \"negmissing@example.com\"\n}"
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - wrongContentType",
+          "item": [
+            {
+              "name": "Registracija – neteisingas Content-Type (tikimės 400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "username=user_ct_text&fullName=Bad CT&email=ct@example.com&password=secret1"
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "negative - register - emptyBody",
+          "item": [
+            {
+              "name": "Registracija – tuščias body (400, validatorius)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error = Invalid input', () => pm.expect(j.error).to.equal('Invalid input'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /register', () => pm.expect(pm.request.url.getPath()).to.eql('/register'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – login_happy_path",
+      "item": [
+        {
+          "name": "positive - login - userLogin",
+          "item": [
+            {
+              "name": "Prisijungimas – sėkmė (POST /login)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Dinaminės reikšmės, kad testas būtų kartotinas",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('loginUsername', `user_pos_login_${id}`);",
+                      "pm.collectionVariables.set('loginFullName', 'User Positive Login');",
+                      "pm.collectionVariables.set('loginEmail', `poslogin_${id}@example.com`);",
+                      "pm.collectionVariables.set('loginPassword', 'secret1');",
+                      "",
+                      "// Numatytasis baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "",
+                      "// Užregistruojame vartotoją prieš login",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: {",
+                      "    mode: 'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('loginUsername'),",
+                      "      fullName: pm.collectionVariables.get('loginFullName'),",
+                      "      email: pm.collectionVariables.get('loginEmail'),",
+                      "      password: pm.collectionVariables.get('loginPassword')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// === 1) Status ===",
+                      "pm.test('Status 200 (OK)', () => pm.response.to.have.status(200));",
+                      "",
+                      "// === 2) Content-Type JSON ===",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  const ctype = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ctype).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const body = pm.response.json();",
+                      "",
+                      "// === 3) message + user struktūra ===",
+                      "pm.test('Atsakymas turi message ir user laukus', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body).to.have.property('user');",
+                      "});",
+                      "",
+                      "// === 4) User laukų struktūra: turi TIK 3 laukus ===",
+                      "pm.test('user turi TIK username/email/fullName laukus', () => {",
+                      "  const expected = ['username', 'email', 'fullName'];",
+                      "  pm.expect(Object.keys(body.user)).to.have.members(expected);",
+                      "});",
+                      "",
+                      "// === 5) Password saugumas: neturi būti niekur ===",
+                      "pm.test('Atsakyme nėra jokio password lauko', () => {",
+                      "  const responseText = pm.response.text();",
+                      "  pm.expect(responseText.toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// === 6) Tiksliai sutampa su registruotais (STRICT match) ===",
+                      "pm.test('Login atsakymas STRICT sutampa su registruotais duomenimis', () => {",
+                      "  pm.expect(body.user).to.eql({",
+                      "    username: pm.collectionVariables.get('loginUsername'),",
+                      "    fullName: pm.collectionVariables.get('loginFullName'),",
+                      "    email: pm.collectionVariables.get('loginEmail')",
+                      "  });",
+                      "});",
+                      "",
+                      "// === 7) Endpoint verifikacija ===",
+                      "pm.test('Teisingas endpoint (/login)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/login$/);",
+                      "});",
+                      "",
+                      "// === 8) loggedInUser pasikeitė (netiesioginis testas per GET /user) ===",
+                      "pm.test('loggedInUser pasikeitė (GET /user patvirtina)', (done) => {",
+                      "  const base = pm.collectionVariables.get('baseUrl');",
+                      "  const username = pm.collectionVariables.get('loginUsername');",
+                      "",
+                      "  pm.sendRequest({ url: `${base}/user/${username}`, method: 'GET' }, (err, res) => {",
+                      "    pm.expect(res.code).to.equal(200);",
+                      "    const j = res.json();",
+                      "    pm.expect(j.username).to.eql(username);",
+                      "    pm.expect(j).to.not.have.property('password');",
+                      "    done();",
+                      "  });",
+                      "});",
+                      "",
+                      "// === 9) Login edge-case: su tarpais neturi veikti ===",
+                      "pm.test('Login su papildomais tarpais NEGALI veikti', (done) => {",
+                      "  const base = pm.collectionVariables.get('baseUrl');",
+                      "  const badUsername = '   ' + pm.collectionVariables.get('loginUsername') + '   ';",
+                      "",
+                      "  pm.sendRequest({",
+                      "    url: `${base}/login`,",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json' },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({",
+                      "        username: badUsername,",
+                      "        password: pm.collectionVariables.get('loginPassword')",
+                      "      })",
+                      "    }",
+                      "  }, (err, res) => {",
+                      "    pm.expect(res.code).to.equal(401);",
+                      "    done();",
+                      "  });",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{loginUsername}}\",\n  \"password\": \"{{loginPassword}}\"\n}"
+                },
+                "description": "Prisijungimo sėkmės scenarijus su pilnais gilesniais testais."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – login_invalid_cases",
+      "item": [
+        {
+          "name": "negative - login - invalid",
+          "item": [
+            {
+              "name": "Login – neteisingas slaptažodis (401)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('neg_login_user', `neg_login_${id}`);",
+                      "pm.collectionVariables.set('neg_login_pass', 'secret1');",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.sendRequest({",
+                      "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+                      "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_login_user'), fullName:'Neg Login', email:`neglogin_${id}@ex.com`, password: pm.collectionVariables.get('neg_login_pass') })}",
+                      "});",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Yra error', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error tekstas tikslus', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Teisingas endpoint', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{neg_login_user}}\",\n  \"password\": \"WRONGPASS\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Login – vartotojas neegzistuoja (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"non_existing_user_12345\",\n  \"password\": \"secret1\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Login – username tik iš tarpų (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error message teisingas', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"   \",\n  \"password\": \"whatever\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Login – neteisingi simboliai username (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"' OR 1=1 --\",\n  \"password\": \"anything\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "negative - login - missingField",
+          "item": [
+            {
+              "name": "Login – trūksta password (401)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('neg_login2_user', `neg_login_miss_${id}`);",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.sendRequest({",
+                      "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+                      "  body:{mode:'raw', raw: JSON.stringify({ username: pm.collectionVariables.get('neg_login2_user'), fullName:'Neg Login Miss', email:`negloginmiss_${id}@ex.com`, password:'secret1' })}",
+                      "});",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error struktūra', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error tekstas tikslus', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{neg_login2_user}}\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Login – trūksta username (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error egzistuoja', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint /login', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"secret1\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Login – tuščias body (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Yra error laukas', () => pm.expect(j).to.have.property('error'));",
+                      "pm.test('Error tekstas = Invalid username or password', () => pm.expect(j.error).to.equal('Invalid username or password'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Teisingas endpoint', () => pm.expect(pm.request.url.getPath()).to.eql('/login'));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                }
+              }
+            },
+            {
+              "name": "Login – neteisingas Content-Type (500 expected)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 500', () => pm.response.to.have.status(500));",
+                      "pm.test('Content-Type yra HTML (Body parser klaida)', () => {",
+                      "  const ct = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ct).to.match(/text\\/html|text\\/plain/i);",
+                      "});",
+                      "// NEGALIMA bandyti j = pm.response.json(), nes body HTML",
+                      "pm.test('Klaida yra HTML formate', () => {",
+                      "  pm.expect(pm.response.text()).to.include('<');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "username=test&password=whatever"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – user_get_flow",
+      "item": [
+        {
+          "name": "positive - user - getUser",
+          "item": [
+            {
+              "name": "Gauti vartotoją – sėkmė (GET /user/:username)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sugeneruojame unikalias reikšmes",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('u_username', `user_pos_get_${id}`);",
+                      "pm.collectionVariables.set('u_fullName_raw', '   <script>alert(1)</script>   ');",
+                      "pm.collectionVariables.set('u_email', `posget_${id}@example.com`);",
+                      "pm.collectionVariables.set('u_password', 'secret1');",
+                      "",
+                      "// Tikrasis escaped + trimmed variantas (pagal express-validator.escape())",
+                      "const expectedEscaped = '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;';",
+                      "pm.collectionVariables.set('u_fullName_expected', expectedEscaped);",
+                      "",
+                      "// Užtikriname baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// Registruojame vartotoją prieš GET",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type':'application/json' },",
+                      "  body: {",
+                      "    mode:'raw',",
+                      "    raw: JSON.stringify({",
+                      "      username: pm.collectionVariables.get('u_username'),",
+                      "      fullName: pm.collectionVariables.get('u_fullName_raw'),",
+                      "      email: pm.collectionVariables.get('u_email'),",
+                      "      password: pm.collectionVariables.get('u_password')",
+                      "    })",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status 200",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON formatas",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json\\b/i);",
+                      "});",
+                      "",
+                      "const user = pm.response.json();",
+                      "",
+                      "// 3) TIK 3 laukų grąžinimas",
+                      "pm.test('User turi TIK 3 laukus', () => {",
+                      "  pm.expect(Object.keys(user)).to.have.members(['username', 'email', 'fullName']);",
+                      "});",
+                      "",
+                      "// 4) Visiškai nėra password visame atsakyme",
+                      "pm.test('Atsakyme apskritai nėra password', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) STRICT equality tikrinimas",
+                      "pm.test('Strict equality: visi laukai sutampa', () => {",
+                      "  pm.expect(user).to.eql({",
+                      "    username: pm.collectionVariables.get('u_username'),",
+                      "    email: pm.collectionVariables.get('u_email'),",
+                      "    fullName: pm.collectionVariables.get('u_fullName_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Escape test",
+                      "pm.test('FullName escape teisingas', () => {",
+                      "  pm.expect(user.fullName).to.equal(pm.collectionVariables.get('u_fullName_expected'));",
+                      "});",
+                      "",
+                      "// 7) Trim test",
+                      "pm.test('FullName neturi whitespace prieš/po', () => {",
+                      "  pm.expect(user.fullName.startsWith(' ')).to.be.false;",
+                      "  pm.expect(user.fullName.endsWith(' ')).to.be.false;",
+                      "});",
+                      "",
+                      "// 8) Endpoint correctness",
+                      "pm.test('Naudojamas teisingas user endpoint', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/user/{{u_username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "{{u_username}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – user_get_not_found",
+      "item": [
+        {
+          "name": "negative - user - getUserNotFound",
+          "item": [
+            {
+              "name": "GET /user/:username – 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error tekstas teisingas', () => pm.expect(j.error).to.equal('User not found'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint prasideda /user/', () => pm.expect(pm.request.url.getPath()).to.match(/\\/user\\//));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/user/not_existing_user",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "user",
+                    "not_existing_user"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – user_list_flow",
+      "item": [
+        {
+          "name": "positive - user - getUsers",
+          "item": [
+            {
+              "name": "Gauti visus vartotojus – sėkmė (GET /users)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Unikalūs duomenys",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('u1', `user_pos_list1_${id}`);",
+                      "pm.collectionVariables.set('u2', `user_pos_list2_${id}`);",
+                      "",
+                      "// XSS ir trim testams",
+                      "pm.collectionVariables.set('u1_full_raw', '   <script>Hi1</script>   ');",
+                      "pm.collectionVariables.set('u2_full_raw', '   <script>Hi2</script>   ');",
+                      "",
+                      "// Expected escaped (pagal express-validator.escape())",
+                      "const esc1 = '&lt;script&gt;Hi1&lt;&#x2F;script&gt;';",
+                      "const esc2 = '&lt;script&gt;Hi2&lt;&#x2F;script&gt;';",
+                      "pm.collectionVariables.set('u1_full_expected', esc1);",
+                      "pm.collectionVariables.set('u2_full_expected', esc2);",
+                      "",
+                      "// Emailai",
+                      "pm.collectionVariables.set('u1_email', `poslist1_${id}@example.com`);",
+                      "pm.collectionVariables.set('u2_email', `poslist2_${id}@example.com`);",
+                      "",
+                      "// Užtikriname baseUrl",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "",
+                      "// Registruojame abu vartotojus",
+                      "const register = (username, fullName, email) => {",
+                      "  pm.sendRequest({",
+                      "    url: `${base}/register`,",
+                      "    method: 'POST',",
+                      "    header: { 'Content-Type': 'application/json' },",
+                      "    body: {",
+                      "      mode: 'raw',",
+                      "      raw: JSON.stringify({",
+                      "        username,",
+                      "        fullName,",
+                      "        email,",
+                      "        password: 'secret1'",
+                      "      })",
+                      "    }",
+                      "  });",
+                      "};",
+                      "",
+                      "register(pm.collectionVariables.get('u1'), pm.collectionVariables.get('u1_full_raw'), pm.collectionVariables.get('u1_email'));",
+                      "register(pm.collectionVariables.get('u2'), pm.collectionVariables.get('u2_full_raw'), pm.collectionVariables.get('u2_email'));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1) Status",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "",
+                      "// 2) JSON header",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  pm.expect(pm.response.headers.get('Content-Type')).to.match(/^application\\/json/i);",
+                      "});",
+                      "",
+                      "// 3) Response yra masyvas",
+                      "const arr = pm.response.json();",
+                      "pm.test('Atsakymas yra masyvas', () => pm.expect(arr).to.be.an('array'));",
+                      "",
+                      "// 4) Password neturi būti NIEKUR visame tekste",
+                      "pm.test('Nėra password visame response', () => {",
+                      "  pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+                      "});",
+                      "",
+                      "// 5) Kiekvienas user turi TIK šiuos laukus",
+                      "pm.test('Kiekvienas user turi tik username/email/fullName', () => {",
+                      "  arr.forEach(u => {",
+                      "    pm.expect(Object.keys(u)).to.have.members(['username', 'email', 'fullName']);",
+                      "  });",
+                      "});",
+                      "",
+                      "// 6) Turi būti abu naujai sukurti vartotojai",
+                      "pm.test('Masive yra u1 ir u2', () => {",
+                      "  const usernames = arr.map(u => u.username);",
+                      "  pm.expect(usernames).to.include(pm.collectionVariables.get('u1'));",
+                      "  pm.expect(usernames).to.include(pm.collectionVariables.get('u2'));",
+                      "});",
+                      "",
+                      "// 7) STRICT equality naujiems vartotojams",
+                      "pm.test('u1 STRICT equality', () => {",
+                      "  const u = arr.find(x => x.username === pm.collectionVariables.get('u1'));",
+                      "  pm.expect(u).to.eql({",
+                      "    username: pm.collectionVariables.get('u1'),",
+                      "    email: pm.collectionVariables.get('u1_email'),",
+                      "    fullName: pm.collectionVariables.get('u1_full_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "pm.test('u2 STRICT equality', () => {",
+                      "  const u = arr.find(x => x.username === pm.collectionVariables.get('u2'));",
+                      "  pm.expect(u).to.eql({",
+                      "    username: pm.collectionVariables.get('u2'),",
+                      "    email: pm.collectionVariables.get('u2_email'),",
+                      "    fullName: pm.collectionVariables.get('u2_full_expected')",
+                      "  });",
+                      "});",
+                      "",
+                      "// 8) XSS escape test",
+                      "pm.test('XSS escape suveikė abu kartus', () => {",
+                      "  const u1 = arr.find(x => x.username === pm.collectionVariables.get('u1'));",
+                      "  const u2 = arr.find(x => x.username === pm.collectionVariables.get('u2'));",
+                      "  pm.expect(u1.fullName).to.equal(pm.collectionVariables.get('u1_full_expected'));",
+                      "  pm.expect(u2.fullName).to.equal(pm.collectionVariables.get('u2_full_expected'));",
+                      "});",
+                      "",
+                      "// 9) Trim test",
+                      "pm.test('Trim suveikė visiems vartotojams', () => {",
+                      "  arr.forEach(u => {",
+                      "    pm.expect(u.fullName.startsWith(' ')).to.be.false;",
+                      "    pm.expect(u.fullName.endsWith(' ')).to.be.false;",
+                      "  });",
+                      "});",
+                      "",
+                      "// 10) Teisingas endpoint",
+                      "pm.test('Teisingas endpoint (/users)', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.eql('/users');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – delete_and_verify_404",
+      "item": [
+        {
+          "name": "positive - user - deleteThenGet404",
+          "item": [
+            {
+              "name": "Ištrinti ir patikrinti 404 (DELETE → GET 404)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('dg_username', `user_pos_del_get_${id}`);",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+                      "pm.sendRequest({",
+                      "  url: base + '/register', method:'POST', header:{'Content-Type':'application/json'},",
+                      "  body:{mode:'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('dg_username'),",
+                      "    fullName: 'User Del Get',",
+                      "    email: `delget_${id}@example.com`,",
+                      "    password: 'secret1'",
+                      "  })}",
+                      "});",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) pm.collectionVariables.set('baseUrl','http://localhost:3000');"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 1 Tikriname DELETE atsakymą",
+                      "pm.test('DELETE status 200 ir JSON', () => {",
+                      "  pm.response.to.have.status(200);",
+                      "  const ctype = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ctype, 'Content-Type antraštė egzistuoja').to.be.a('string');",
+                      "  pm.expect(ctype).to.match(/^application\\/json\\b/i); // leidžia ; charset=utf-8",
+                      "});",
+                      "",
+                      "// 2 Paruošiame duomenis naujam GET tikrinimui",
+                      "const base = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl');",
+                      "const u = pm.collectionVariables.get('dg_username');",
+                      "",
+                      "// 3 Vykdome GET po ištrynimo – tikimės 404",
+                      "pm.sendRequest({ url: `${base}/user/${u}`, method: 'GET' }, (err, res) => {",
+                      "  pm.test('GET po delete → 404', () => pm.expect(res.code).to.equal(404));",
+                      "",
+                      "  // Tikriname JSON formatą",
+                      "  pm.test('GET po delete → JSON', () => {",
+                      "    const ctype = res.headers.get('Content-Type');",
+                      "    pm.expect(ctype, 'Content-Type antraštė egzistuoja').to.be.a('string');",
+                      "    pm.expect(ctype).to.match(/^application\\/json\\b/i); // leidžia ; charset=utf-8",
+                      "  });",
+                      "",
+                      "  // Tikriname error lauką ir tekstą",
+                      "  const j = res.json();",
+                      "  pm.test(\"GET po delete → error 'User not found'\", () => pm.expect(j.error).to.equal('User not found'));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/delete-user/{{dg_username}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "delete-user",
+                    "{{dg_username}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – delete_user_not_found",
+      "item": [
+        {
+          "name": "negative - user - deleteUserNotFound",
+          "item": [
+            {
+              "name": "DELETE /delete-user/:username – 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                      "pm.test('Content-Type JSON', () => { const ct = pm.response.headers.get('Content-Type'); pm.expect(ct).to.match(/^application\\/json\\b/i); });",
+                      "const j = pm.response.json();",
+                      "pm.test('Error tekstas teisingas', () => pm.expect(j.error).to.equal('User not found'));",
+                      "pm.test('Nėra user objekto', () => pm.expect(j).to.not.have.property('user'));",
+                      "pm.test('Endpoint prasideda /delete-user/', () => pm.expect(pm.request.url.getPath()).to.match(/\\/delete-user\\//));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/delete-user/not_existing_user",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "delete-user",
+                    "not_existing_user"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scenario – logout_flow",
+      "item": [
+        {
+          "name": "positive - user - logout",
+          "item": [
+            {
+              "name": "Atsijungti – sėkmė (POST /logout)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 🔧 Sukuriame user ir prisijungiame prieš logout testą",
+                      "const id = Date.now();",
+                      "pm.collectionVariables.set('lg_username', `userPosLogout${id}`);",
+                      "pm.collectionVariables.set('lg_fullName', 'User Positive Logout');",
+                      "pm.collectionVariables.set('lg_email', `poslogout${id}@example.com`);",
+                      "pm.collectionVariables.set('lg_password', 'secret123');",
+                      "// Base URL",
+                      "if (!pm.environment.get('baseUrl') && !pm.collectionVariables.get('baseUrl')) {",
+                      "  pm.collectionVariables.set('baseUrl', 'http://localhost:3000');",
+                      "}",
+                      "const base = pm.collectionVariables.get('baseUrl');",
+                      "// Registracija",
+                      "pm.sendRequest({",
+                      "  url: `${base}/register`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: { mode:'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('lg_username'),",
+                      "    fullName: pm.collectionVariables.get('lg_fullName'),",
+                      "    email: pm.collectionVariables.get('lg_email'),",
+                      "    password: pm.collectionVariables.get('lg_password')",
+                      "  })}",
+                      "});",
+                      "// Login",
+                      "pm.sendRequest({",
+                      "  url: `${base}/login`,",
+                      "  method: 'POST',",
+                      "  header: { 'Content-Type': 'application/json' },",
+                      "  body: { mode:'raw', raw: JSON.stringify({",
+                      "    username: pm.collectionVariables.get('lg_username'),",
+                      "    password: pm.collectionVariables.get('lg_password')",
+                      "  })}",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// === 1. Status ===",
+                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "// === 2. JSON ===",
+                      "pm.test('Content-Type yra JSON', () => {",
+                      "  const ctype = pm.response.headers.get('Content-Type');",
+                      "  pm.expect(ctype).to.match(/^application\\/json/i);",
+                      "});",
+                      "const body = pm.response.json();",
+                      "// === 3. Message ===",
+                      "pm.test('Atsakymas turi message', () => {",
+                      "  pm.expect(body).to.have.property('message');",
+                      "  pm.expect(body.message.toLowerCase()).to.include('logged out');",
+                      "});",
+                      "// === 4. Teisingas endpoint ===",
+                      "pm.test('Teisingas endpoint', () => {",
+                      "  pm.expect(pm.request.url.getPath()).to.eql('/logout');",
+                      "});",
+                      "// === 5. loggedInUser nulintas (netiesioginė validacija) ===",
+                      "// Negalime tikrinti GET /user/, nes vartotojas TEBEEXISTUOJA masyve.",
+                      "// Tikriname, kad atsakymas patvirtina logout.",
+                      "pm.test('Logout įvyko sėkmingai', () => {",
+                      "  pm.expect(body.message).to.match(/logged out|logout/i);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
